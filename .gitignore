@@ -31,7 +31,7 @@
 ## Plugin-specific files:
 
 # IntelliJ
-.idea/compiler.xml
+.idea/
 /out/
 
 # mpeltonen/sbt-idea plugin
