@@ -26,7 +26,7 @@
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
                             <mainClass>com.goranzuri.anime.Main</mainClass>
-                        </manifest><!-- <manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile> -->
+                        </manifest>
                     </archive>
                 </configuration>
             </plugin>
