@@ -40,7 +40,7 @@ public class Main {
             Main.printHelpPage(options);
             return;
         }
-        numberOfDaysFilter.parseInt(commandLine.getOptionValue(DAYS_FILTER_ARGUMENT));
+        numberOfDaysFilter = Integer.parseInt(commandLine.getOptionValue(DAYS_FILTER_ARGUMENT));
 
         finishedSeriesFinder = new FinishedSeriesFinder();
         finishedSeriesFinder.listFoldersThatDontHaveNewerFiles(commandLine.getOptionValue(DIRECTORY_ARGUMENT), numberOfDaysFilter);
