@@ -18,6 +18,7 @@ public class Main {
     private static final String DIRECTORY_ARGUMENT = "dir";
     private static final String DAYS_FILTER_ARGUMENT = "days";
     private static final String MOVE_FINISHED = "moveDest";
+    private static final String DELETE_MOVED = "remove";
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -34,11 +35,13 @@ public class Main {
         Option option_directory = OptionBuilder.withArgName(DIRECTORY_ARGUMENT).hasArg().withDescription("source directory to search").create(DIRECTORY_ARGUMENT);
         Option option_days = OptionBuilder.withArgName(DAYS_FILTER_ARGUMENT).hasArg().withDescription("number of days from the last episode").create(DAYS_FILTER_ARGUMENT);
         Option option_move = OptionBuilder.withArgName(MOVE_FINISHED).hasArg().withDescription("location where to move finished series").create(MOVE_FINISHED);
+        Option option_remove = OptionBuilder.withArgName(DELETE_MOVED).withDescription("remove moved directories").create(DELETE_MOVED);
         Options options = new Options();
 
         options.addOption(option_directory);
         options.addOption(option_days);
         options.addOption(option_move);
+        options.addOption(option_remove);
 
         return options;
     }
@@ -82,16 +85,22 @@ public class Main {
                 Path destFolder = destinationPath.resolve(file.getName());
                 if (Files.exists(destFolder)){
                     System.out.println(ANSI_YELLOW + "Duplicate: " + file.getName());
-                    org.apache.commons.io.FileUtils.deleteDirectory(file);
+                    if (commandLine.hasOption(DELETE_MOVED)) {
+                        org.apache.commons.io.FileUtils.deleteDirectory(file);
+                        System.out.println(ANSI_GREEN  + "Deleted source: " + file.getName());
+                    }
                 }else {
-                    System.out.println(ANSI_BLUE + "Copying: " + file.getName());
+                    System.out.println(ANSI_GREEN + "Copying: " + file.getName());
                     Files.createDirectory(destFolder);
                     org.apache.commons.io.FileUtils.copyDirectory(file, destFolder.toFile(), true);
-
+                    System.out.println(ANSI_GREEN  + "Copied: " + file.getName());
+                    if (commandLine.hasOption(DELETE_MOVED)) {
+                        org.apache.commons.io.FileUtils.deleteDirectory(file);
+                        System.out.println(ANSI_GREEN  + "Deleted source: " + file.getName());
+                    }
                 }
             }
         }
-
     }
 
 
