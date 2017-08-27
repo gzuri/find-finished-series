@@ -1,6 +1,12 @@
-# find-finished-series
-This small app searches the given root and finds all subfolders that don't have files newer than desired date. 
-By design it is used to find all finished series. 
+# Introduction
+This apps searches all sub-folders from any given folders for finished series.
+
+Options:
+- dir - starting search folder
+- days - find series that don't have a newer episode than the option
+- ignorePartial - ignore that folder has missing episodes
+- moveDest - moves finished series to another location
+- remove - removes original after move
 
 ## Usage
 ```

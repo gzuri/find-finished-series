@@ -8,6 +8,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -19,6 +20,7 @@ public class Main {
     private static final String DAYS_FILTER_ARGUMENT = "days";
     private static final String MOVE_FINISHED = "moveDest";
     private static final String DELETE_MOVED = "remove";
+    private static final String IGNORE_WITH_MISSING_EPISODES = "ignorePartial";
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -36,12 +38,14 @@ public class Main {
         Option option_days = OptionBuilder.withArgName(DAYS_FILTER_ARGUMENT).hasArg().withDescription("number of days from the last episode").create(DAYS_FILTER_ARGUMENT);
         Option option_move = OptionBuilder.withArgName(MOVE_FINISHED).hasArg().withDescription("location where to move finished series").create(MOVE_FINISHED);
         Option option_remove = OptionBuilder.withArgName(DELETE_MOVED).withDescription("remove moved directories").create(DELETE_MOVED);
+        Option option_ignore_partial = OptionBuilder.withArgName(IGNORE_WITH_MISSING_EPISODES).withDescription("Ignore with missing episodes").create(IGNORE_WITH_MISSING_EPISODES);
         Options options = new Options();
 
         options.addOption(option_directory);
         options.addOption(option_days);
         options.addOption(option_move);
         options.addOption(option_remove);
+        options.addOption(option_ignore_partial);
 
         return options;
     }
@@ -67,10 +71,25 @@ public class Main {
         numberOfDaysFilter = Integer.parseInt(commandLine.getOptionValue(DAYS_FILTER_ARGUMENT));
 
         finishedSeriesFinder = new FinishedSeriesFinder();
-        List<File> files = finishedSeriesFinder.listFoldersThatDontHaveNewerFiles(commandLine.getOptionValue(DIRECTORY_ARGUMENT), numberOfDaysFilter);
+        List<File> foldersWithFinished = finishedSeriesFinder.listFoldersThatDontHaveNewerFiles(commandLine.getOptionValue(DIRECTORY_ARGUMENT), numberOfDaysFilter);
 
-        for(File file : files)
-            System.out.println(file.getName());
+        List<File> foldersWithMissingEpisodes = new ArrayList<>();
+        for(File folder : foldersWithFinished) {
+            List<Integer> missingEpisodes = FinishedSeriesFinder.findMissingEpisodes(folder);
+            if (missingEpisodes.size() > 0){
+                foldersWithMissingEpisodes.add(folder);
+                System.out.print(ANSI_RED + folder.getName() + " has missing episodes" );
+                for(Integer i: missingEpisodes)
+                    System.out.print(" " + i);
+                System.out.println();
+            }
+        }
+
+        if (!commandLine.hasOption(IGNORE_WITH_MISSING_EPISODES))
+            foldersWithFinished.removeAll(foldersWithMissingEpisodes);
+
+        for(File file : foldersWithFinished)
+            System.out.println(ANSI_WHITE + file.getName());
 
 
         if (commandLine.hasOption(MOVE_FINISHED)){
@@ -81,7 +100,7 @@ public class Main {
                 return;
             }
 
-            for(File file : files){
+            for(File file : foldersWithFinished){
                 Path destFolder = destinationPath.resolve(file.getName());
                 if (Files.exists(destFolder)){
                     System.out.println(ANSI_YELLOW + "Duplicate: " + file.getName());
