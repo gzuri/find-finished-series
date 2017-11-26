@@ -1,10 +1,12 @@
 package com.goranzuri.series;
 
+import com.sun.org.apache.xml.internal.security.utils.DOMNamespaceContext;
 import org.apache.commons.cli.*;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +23,7 @@ public class Main {
     private static final String MOVE_FINISHED = "moveDest";
     private static final String DELETE_MOVED = "remove";
     private static final String IGNORE_WITH_MISSING_EPISODES = "ignorePartial";
+    private static final String DOWNLOAD_TORRENT_PATH = "dlTorrent";
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -39,6 +42,7 @@ public class Main {
         Option option_move = OptionBuilder.withArgName(MOVE_FINISHED).hasArg().withDescription("location where to move finished series").create(MOVE_FINISHED);
         Option option_remove = OptionBuilder.withArgName(DELETE_MOVED).withDescription("remove moved directories").create(DELETE_MOVED);
         Option option_ignore_partial = OptionBuilder.withArgName(IGNORE_WITH_MISSING_EPISODES).withDescription("Ignore with missing episodes").create(IGNORE_WITH_MISSING_EPISODES);
+        Option option_download_missing_episodes = OptionBuilder.withArgName(DOWNLOAD_TORRENT_PATH).hasArg().withDescription("Ignore with missing episodes").create(DOWNLOAD_TORRENT_PATH);
         Options options = new Options();
 
         options.addOption(option_directory);
@@ -46,6 +50,7 @@ public class Main {
         options.addOption(option_move);
         options.addOption(option_remove);
         options.addOption(option_ignore_partial);
+        options.addOption(option_download_missing_episodes);
 
         return options;
     }
@@ -55,7 +60,7 @@ public class Main {
         formatter.printHelp("findFinishedSeries", "", options, "Application searches for directory where no file was added after selected date", true);
     }
 
-    private static void runApp(String... args) throws ParseException, IOException {
+    private static void runApp(String... args) throws ParseException, IOException, ParserConfigurationException, SAXException {
         FinishedSeriesFinder finishedSeriesFinder;
         CommandLineParser parser = new GnuParser();
         CommandLine commandLine;
@@ -68,6 +73,14 @@ public class Main {
             Main.printHelpPage(options);
             return;
         }
+
+        if (commandLine.hasOption(DOWNLOAD_TORRENT_PATH)){
+             if (!Files.exists(Paths.get(commandLine.getOptionValue(DOWNLOAD_TORRENT_PATH)))) {
+                 System.out.print(ANSI_RED + "Download torrent path is invalid");
+                 return;
+             }
+        }
+
         numberOfDaysFilter = Integer.parseInt(commandLine.getOptionValue(DAYS_FILTER_ARGUMENT));
 
         finishedSeriesFinder = new FinishedSeriesFinder();
@@ -79,8 +92,12 @@ public class Main {
             if (missingEpisodes.size() > 0){
                 foldersWithMissingEpisodes.add(folder);
                 System.out.print(ANSI_RED + folder.getName() + " has missing episodes" );
-                for(Integer i: missingEpisodes)
+                for(Integer i: missingEpisodes) {
                     System.out.print(" " + i);
+                    if (commandLine.hasOption(DOWNLOAD_TORRENT_PATH)){
+                        FinishedSeriesFinder.downloadTorrentTry(commandLine.getOptionValue(DOWNLOAD_TORRENT_PATH), folder.getName() + " " + i);
+                    }
+                }
                 System.out.println();
             }
         }
@@ -127,9 +144,7 @@ public class Main {
         try{
             runApp(args);
 
-        } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        }  catch (Exception e) {
             e.printStackTrace();
         }
     }

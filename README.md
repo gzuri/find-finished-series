@@ -7,6 +7,7 @@ Options:
 - ignorePartial - ignore that folder has missing episodes
 - moveDest - moves finished series to another location
 - remove - removes original after move
+- dlTorrent - downloads torrent files for missing episodes from nyaa.si
 
 ## Usage
 ```
